@@ -1,11 +1,456 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko"> 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>웹 호스팅</title>
+    <title>숫자 기억 게임</title>
+    <style>
+        /* 웹사이트 전체 레이아웃 세팅 */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        /* 화면을 위아래 수직으로 나누어 정렬하는 큰 틀 */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 30px 40px 60px 40px; 
+            box-sizing: border-box;
+        }
+
+        /* 타이틀 영역: 작고 연한 글씨로 왼쪽 상단에 배치 */
+        .title-area {
+            flex-shrink: 0; 
+            text-align: left; 
+            margin-bottom: 20px;
+        }
+        .main-title {
+            font-size: 18px;    
+            font-weight: normal;
+            color: #999999;     
+            letter-spacing: -0.5px;
+        }
+
+        /* 나머지 컨텐츠들이 모이는 구역 */
+        .content-area {
+            flex-grow: 1; 
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; 
+            align-items: center;     
+            gap: 15px;               
+            width: 100%;
+            padding-top: 8vh;        
+        }
+
+        /* 설정 영역을 세련된 카드 형태로 세로 배치 정렬 */
+        #setup-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;       
+            justify-content: center;    
+            gap: 18px;                 
+            font-size: 20px;           
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        /* 설정창 내부의 한 줄 덩어리들 */
+        .setup-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 진행 상황 텍스트 영역들 */
+        .round-title {
+            font-size: 26px;
+            color: #150f07;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        /* 숫자 표시창 */
+        .number-display {
+            font-size: 58px; 
+            font-weight: bold;
+            color: #0c0a10; 
+            letter-spacing: 6px;
+            margin: 45px 0;
+            min-height: 80px;
+            text-align: center;
+            word-break: break-all;
+            max-width: 90%;
+        }
+        
+        .countdown {
+            font-size: 20px;
+            color: #f39c12; 
+            font-weight: bold;
+            margin-top: 18px;
+        }
+        
+        .info-text {
+            font-size: 24px;
+            color: #786e80;
+            margin: 5px 0;
+        }
+        
+        /* 정답 및 일본어 발음 확인창 */
+        .answer-display {
+            font-size: 24px;
+            color: #2bba2b;
+            font-weight: bold;
+            margin-top: 15px;
+            word-break: break-all;
+            max-width: 90%;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .answer-num {
+            font-size: 36px;
+            color: #111111;
+            margin-bottom: 10px;
+        }
+        .ja-kana {
+            color: #4a6fa5;
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+        .ja-kr-sound {
+            color: #e67e22;
+            font-size: 22px;
+        }
+        
+        /* 입력창, 선택창(select), 버튼 스타일 */
+        input, select, button {
+            font-size: 18px;
+            padding: 8px 14px;
+            border-radius: 6px;
+            box-sizing: border-box;    
+            height: 46px;              
+        }
+        input, select {
+            border: 1px solid #ccc;    
+            text-align: center;
+            background-color: white;
+        }
+        input[type="number"] {
+            width: 90px;
+        }
+        select {
+            min-width: 140px;
+            cursor: pointer;
+        }
+        button {
+            background-color: #99b1d1;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s; 
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .start-btn {
+            margin-top: 10px;
+            width: 100%;
+            height: 50px;
+            font-size: 20px;
+            background-color: #7a9cc6;
+        }
+    </style>
 </head>
+
 <body>
-    git pages 입니다.
+
+    <div class="main-container">
+        
+        <!-- 왼쪽 상단 타이틀 -->
+        <div class="title-area">
+            <div class="main-title">일본어 숫자 읽기.</div>
+        </div>
+        
+        <div class="content-area">
+            
+            <!-- 옵션 세팅 카드 영역 -->
+            <div id="setup-area">
+                <div class="setup-row">
+                    <label for="repeat-input">반복 횟수 :</label>
+                    <input type="number" id="repeat-input" value="3" min="1">
+                    <span>회</span>
+                </div>
+
+                <div class="setup-row">
+                    <label for="length-input">출력 자릿수 :</label>
+                    <select id="length-input">
+                        <option value="1">1자리</option>
+                        <option value="2">2자리</option>
+                        <option value="3">3자리</option>
+                        <option value="4">4자리</option>
+                        <option value="5">5자리</option>
+                        <option value="6">6자리</option>
+                        <option value="7">7자리</option>
+                        <option value="8">8자리</option>
+                        <option value="9">9자리</option>
+                        <option value="10" selected>10자리</option>
+                    </select>
+                </div>
+
+                <div class="setup-row">
+                    <label for="zero-input">끝자리 제한 :</label>
+                    <select id="zero-input">
+                        <option value="0">없음 (일의자리)</option>
+                        <option value="1">십의 자릿수 (끝 1자리 0)</option>
+                        <option value="2">백의 자릿수 (끝 2자리 0)</option>
+                        <option value="3">천의 자릿수 (끝 3자리 0)</option>
+                    </select>
+                </div>
+
+                <button class="start-btn" onclick="startGame()">트레이닝 시작하기</button>
+            </div>
+
+            <!-- 진행 상황 표시 구역 -->
+            <div id="round-title" class="round-title"></div>
+            <div id="status-message" class="info-text"></div>
+            <div id="number-screen" class="number-display"></div>
+            <div id="countdown-screen" class="countdown"></div>
+            <div id="answer-screen" class="answer-display"></div>
+            
+        </div>
+
+    </div>
+    <script>
+        let totalRounds = 0;
+        let currentRound = 0;
+        let generatedNumber = "";
+        let targetLength = 10; 
+        let zeroCount = 0;     
+
+        function startGame() {
+            const inputVal = parseInt(document.getElementById('repeat-input').value);
+            if (isNaN(inputVal) || inputVal < 1) {
+                alert("1 이상의 숫자를 입력해 주세요.");
+                return;
+            }
+            
+            totalRounds = inputVal; 
+            currentRound = 0;
+            
+            targetLength = parseInt(document.getElementById('length-input').value);
+            zeroCount = parseInt(document.getElementById('zero-input').value);
+
+            if (zeroCount >= targetLength) {
+                alert("출력 자릿수가 끝자리 제한 자릿수보다 커야 합니다.");
+                return;
+            }
+            
+            document.getElementById('setup-area').style.display = 'none'; 
+            nextRound();
+        }
+
+        async function nextRound() {
+            if (currentRound >= totalRounds) {
+                clearScreens();
+                document.getElementById('status-message').innerText = "모든 반복이 성공적으로 끝났습니다!";
+                document.getElementById('setup-area').style.display = 'flex'; 
+                return;
+            }
+
+            currentRound++;
+            clearScreens();
+            document.getElementById('round-title').innerText = `${currentRound}번째 반복`;
+            document.getElementById('status-message').innerText = "잠시 후 숫자가 출력될 예정입니다.";
+            
+            await sleep(2000); 
+            
+            let digits = [];
+            digits.push(Math.floor(Math.random() * 9) + 1);
+            
+            let randomFillLength = targetLength - zeroCount;
+            for (let i = 1; i < randomFillLength; i++) {
+                digits.push(Math.floor(Math.random() * 10));
+            }
+            for (let i = 0; i < zeroCount; i++) {
+                digits.push(0); 
+            }
+            generatedNumber = digits.join("");
+            
+            document.getElementById('status-message').innerText = "숫자를 읽어보세요!";
+            document.getElementById('number-screen').innerText = generatedNumber;
+            
+            await sleep(1000); 
+            
+            for (let d = 9; d > 0; d--) {
+                document.getElementById('countdown-screen').innerText = `${d}초 남았습니다...`;
+                await sleep(1000);
+            }
+            document.getElementById('countdown-screen').innerText = "";
+
+            // 10자리 대응 및 가변 자릿수 일본어 발음 자동 생성 로직 호출
+            const jaPronunciation = convertToJaPronunciation(generatedNumber);
+
+            // 화면 표시 내용 조립
+            document.getElementById('answer-screen').innerHTML = `
+                <div class="answer-num">정답 숫자 확인: ${generatedNumber}</div>
+                <div class="ja-kana">🇯🇵 ${jaPronunciation.kana}</div>
+                <div class="ja-kr-sound">🗣️ ${jaPronunciation.kr}</div>
+            `;
+            
+            const koreanBigNumber = convertToKoreanNumber(generatedNumber);
+
+            await speakText(generatedNumber, 'ja-JP', 0.5); 
+            await speakText(generatedNumber, 'ja-JP', 0.5); 
+            await speakText(koreanBigNumber, 'ko-KR', 1.0); 
+            await speakText(generatedNumber, 'ja-JP', 1.0); 
+
+            await sleep(2000); 
+            nextRound();
+        }
+        // 💡 1~10자리 숫자를 유연하게 대조하고 보정하는 고성능 독음 추적 엔진
+        function convertToJaPronunciation(numStr) {
+            // 최대 10자리에 맞춤 패딩 정렬
+            let padded = numStr.padStart(10, '0');
+            
+            const kanaMap = ["", "いち", "に", "さん", "よん", "ご", "ろく", "なな", "はち", "きゅう"];
+            const krMap   = ["", "이치", "니", "산", "욘", "고", "로쿠", "나나", "하치", "큐-"];
+            
+            let okuPart = padded.substring(0, 2);
+            let manPart = padded.substring(2, 6);
+            let ichiPart = padded.substring(6, 10);
+            
+            let resKana = "";
+            let resKr = "";
+
+            function read4Digits(chunk) {
+                let chunkKana = "";
+                let chunkKr = "";
+                let len = chunk.length;
+                for(let i=0; i<len; i++) {
+                    let n = parseInt(chunk[i]);
+                    let pos = len - 1 - i;
+                    if (n !== 0) {
+                        if (pos === 3) {
+                            if (n === 1) { chunkKana += "せん"; chunkKr += "센"; }
+                            else if (n === 3) { chunkKana += "さんぜん"; chunkKr += "산젠"; }
+                            else if (n === 8) { chunkKana += "はっせん"; chunkKr += "핫센"; }
+                            else { chunkKana += kanaMap[n] + "せん"; chunkKr += krMap[n] + "센"; }
+                        } else if (pos === 2) {
+                            if (n === 1) { chunkKana += "ひゃく"; chunkKr += "햐쿠"; }
+                            else if (n === 3) { chunkKana += "さんびゃく"; chunkKr += "산뱌쿠"; }
+                            else if (n === 6) { chunkKana += "ろっぴゃく"; chunkKr += "롯뱌쿠"; }
+                            else if (n === 8) { chunkKana += "はっひゃく"; chunkKr += "하뱌쿠"; }
+                            else { chunkKana += kanaMap[n] + "ひゃく"; chunkKr += krMap[n] + "햐쿠"; }
+                        } else if (pos === 1) {
+                            if (n === 1) { chunkKana += "じゅう"; chunkKr += "쥬우"; }
+                            else { chunkKana += kanaMap[n] + "じゅう"; chunkKr += krMap[n] + "쥬우"; }
+                        } else if (pos === 0) {
+                            chunkKana += kanaMap[n];
+                            chunkKr += krMap[n];
+                        }
+                    }
+                }
+                return { kana: chunkKana, kr: chunkKr };
+            }
+
+            let okuNum = parseInt(okuPart);
+            if (okuNum > 0) {
+                let readOku = read4Digits(okuPart.padStart(4, '0'));
+                resKana += readOku.kana + "おく ";
+                resKr += readOku.kr + "오쿠 ";
+            }
+
+            let manNum = parseInt(manPart);
+            if (manNum > 0) {
+                let readMan = read4Digits(manPart);
+                // 1만일 때 'いちまん(이치만)' 예외 보정 최적화
+                if (manNum === 1 || (manPart.endsWith('1') && manNum < 10)) {
+                    if(!readMan.kana.startsWith("いち")) {
+                        readMan.kana = "いち" + readMan.kana;
+                        readMan.kr = "이치" + readMan.kr;
+                    }
+                }
+                resKana += readMan.kana + "まん ";
+                resKr += readMan.kr + "만 ";
+            }
+
+            let ichiNum = parseInt(ichiPart);
+            if (ichiNum > 0) {
+                let readIchi = read4Digits(ichiPart);
+                resKana += readIchi.kana;
+                resKr += readIchi.kr;
+            }
+
+            if (resKana.trim() === "") {
+                resKana = "ぜろ";
+                resKr = "제로";
+            }
+            return { kana: resKana.trim(), kr: resKr.trim() };
+        }
+
+        // 한국어 큰 숫자 읽기 변환 함수
+        function convertToKoreanNumber(numStr) {
+            const numData = ["", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"];
+            const units = ["", "십", "백", "천"];
+            const bigUnits = ["", "만", "억", "조"];
+            let result = "";
+            let len = numStr.length;
+            let hasValueInPart = false;
+
+            for (let i = 0; i < len; i++) {
+                let num = parseInt(numStr[i]);
+                let position = len - 1 - i;
+                if (num !== 0) {
+                    hasValueInPart = true;
+                    if (num === 1 && (position % 4) !== 0) {
+                        result += units[position % 4];
+                    } else {
+                        result += numData[num] + units[position % 4];
+                    }
+                }
+                if (position % 4 === 0) {
+                    if (hasValueInPart) {
+                        let bigUnitIndex = Math.floor(position / 4);
+                        result += bigUnits[bigUnitIndex] + " ";
+                    }
+                    hasValueInPart = false;
+                }
+            }
+            return result.trim() === "" ? "영" : result.trim();
+        }
+
+        function clearScreens() {
+            document.getElementById('round-title').innerText = "";
+            document.getElementById('status-message').innerText = "";
+            document.getElementById('number-screen').innerText = "";
+            document.getElementById('countdown-screen').innerText = "";
+            document.getElementById('answer-screen').innerText = "";
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function speakText(text, lang, rate) {
+            return new Promise((resolve) => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang;
+                utterance.rate = rate;
+                utterance.onend = () => {
+                    resolve();
+                };
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+    </script>
 </body>
 </html>
